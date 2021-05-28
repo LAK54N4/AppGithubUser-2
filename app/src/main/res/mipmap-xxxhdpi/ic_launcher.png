@@ -1,0 +1,210 @@
+package com.laksana.kemirimall.ui.home
+
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.os.Build
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import androidx.annotation.RequiresApi
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView.HORIZONTAL
+import androidx.recyclerview.widget.RecyclerView.VERTICAL
+import com.bumptech.glide.Glide
+import com.laksana.kemirimall.DBqueries
+//import com.laksana.kemirimall.DBqueries.lists
+//import com.laksana.kemirimall.DBqueries.loadCategories
+//import com.laksana.kemirimall.DBqueries.loadCategoriesName
+//import com.laksana.kemirimall.DBqueries.loadFragmentData
+import com.laksana.kemirimall.R
+import com.laksana.kemirimall.adapter.CategoryAdapter
+import com.laksana.kemirimall.adapter.HomePageAdapter
+import com.laksana.kemirimall.model.CategoryModel
+import com.laksana.kemirimall.model.HomePageModel
+import com.laksana.kemirimall.model.SliderModel
+
+class HomeFragment : Fragment() {
+
+    private var categoryRecyclerView: RecyclerView? = null
+    var categoryAdapter: ArrayList<CategoryModel> = ArrayList()   // List<CategoryModel>
+    //private var homePageModelList: MutableList<HomePageModel> = mutableListOf()
+
+    //private var adapter: HomePageAdapter? = HomePageAdapter(homePageModelList)
+    private lateinit var homePageRecyclerView: RecyclerView
+    private var homePageModelList: ArrayList<HomePageModel> = ArrayList()
+
+    //private lateinit var homePageRVAdapter: ArrayList<HomePageModel>
+    private val sliderModelList: MutableList<SliderModel> = ArrayList()
+
+    //private val db = FirebaseFirestore.getInstance()
+
+    private lateinit var adapter: HomePageAdapter
+
+    private lateinit var noInternetConnection: ImageView
+
+    private val dBqueries : DBqueries = DBqueries()
+    private var postList: List<HomePageModel> = ArrayList()
+
+
+
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_home, container, false)
+        noInternetConnection = view.findViewById(R.id.no_internet_connection)
+
+        fun isNetworkAvailable(context: Context): Boolean {
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).apply {
+                return getNetworkCapabilities(activeNetwork)?.run {
+                    when {
+                        hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+                        hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+                        hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> true
+                        else -> false
+                    }
+                } ?: false
+            }
+        }
+        //if(networkInfo != null && networkInfo.isConnected() == true){
+        /*if(isNetworkAvailable(requireContext())){
+            noInternetConnection.visibility = View.GONE
+            if(showCart) {
+                DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+                supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+                gotoFragment("My Cart", MyCartFragment(), -2)
+            } else {
+                val toggle: ActionBarDrawerToggle = ActionBarDrawerToggle (
+                    this, drawerLayout, toolbar,
+                    R.string.navigation_drawer_open,
+                    R.string.navigation_drawer_close)
+                //"Open navigation drawer", // "Open navigation drawer"
+                //"Close navigation drawer") // "Close navigation drawer"
+
+                drawerLayout.addDrawerListener(toggle)
+                toggle.syncState()
+                setFragment(HomeFragment(), HOME_FRAGMENT)
+            }
+        } else {
+            Glide.with(this).load(R.drawable.nointernetconnection)
+                .into(noInternetConnection)
+            noInternetConnection.visibility = View.VISIBLE
+
+        }
+*/
+
+        @RequiresApi(Build.VERSION_CODES.M)
+        fun isOnline(): Boolean {
+            val connectivityManager = requireActivity().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+            if (capabilities != null) {
+                when {
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
+                        Log.i("Internet", "NetworkCapabilities.TRANSPORT_CELLULAR")
+                        return true
+                    }
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                        Log.i("Internet", "NetworkCapabilities.TRANSPORT_WIFI")
+                        return true
+                    }
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> {
+                        Log.i("Internet", "NetworkCapabilities.TRANSPORT_ETHERNET")
+                        return true
+                    }
+                }
+            }
+            return false
+        }
+
+        if(isOnline()) {
+            noInternetConnection.visibility = View.GONE
+
+            //// start view category
+            categoryRecyclerView = view.findViewById(R.id.category_recyclerview) as RecyclerView
+            categoryRecyclerView!!.layoutManager = LinearLayoutManager(context, HORIZONTAL, false)   // icon slide category
+            val adapterCategory = CategoryAdapter(categoryAdapter)
+            categoryRecyclerView!!.adapter = adapterCategory
+
+            if(categoryAdapter.size == 0) {
+                //loadCategories(adapterCategory, requireContext())
+                //loadCategories(adapterCategory, requireContext())
+                loadPostCategories()
+            } else {
+                adapterCategory.notifyDataSetChanged()
+            }
+            //// end view category
+
+            /// view home Page  /// multiple layout
+            homePageRecyclerView = view.findViewById(R.id.home_page_recyclerview) as RecyclerView
+            homePageRecyclerView.layoutManager = LinearLayoutManager(context, VERTICAL, false)  // init recyclerview
+            //val adapterRecyclerView = HomePageAdapter(homePageRVAdapter)
+            //homePageRecyclerView!!.adapter = adapterRecyclerView
+            ///////////////
+
+            //bannerSliderViewPager = view.findViewById(R.id.banner_slider_view_pager)
+
+            ///////////////
+            /*
+            val docRef =  db.collection("CATEGORIES")
+                .document("HOME")
+                .collection("TOP_DEALS").orderBy("index")
+            docRef.get()
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        for (documentSnapshot: QueryDocumentSnapshot in it.result!!) {
+                            when (documentSnapshot.get("view_type") as Long) {
+                                0L -> {
+
+                                    val noOfBanners: Long = documentSnapshot.get("no_of_banners") as Long
+                                    for (x in 1 until noOfBanners + 1 step 1) {
+                                        Log.d("exist", "DocumentSnapshot data: ${documentSnapshot.get("banner_$x")} ")
+                                        //sliderModelList.add(
+                                        sliderModelList.add(
+                                            SliderModel(
+                                                documentSnapshot.get("banner_$x").toString(),
+                                                documentSnapshot.get("banner_$x"+"_background").toString()
+                                                //Log.d("exist", "DocumentSnapshot data: ${documentSnapshot.get("banner_$x")} ")
+                                                //    .toString(),
+                                                //Log.d("exist", "DocumentSnapshot data: ${documentSnapshot.get("banner_$x"+"_background")} ")
+                                                //    .toString()
+                                            )
+                                        )
+
+                                    }
+
+                                    (homePageModelList as ArrayList).add(HomePageModel(0, sliderModelList))
+                                    homePageRecyclerView.adapter = HomePageAdapter(homePageModelList as java.util.ArrayList<HomePageModel>) //////////////////
+                                    //homePageRecyclerView!!.adapter = adapterRecyclerView
+                                    //(homePageRVAdapter).add(HomePageModel(0, sliderModelList))
+                                    //homePageRecyclerView!!.adapter = HomePageAdapter(homePageRVAdapter)
+
+                                }
+                                1L -> {
+                                    Log.d("exist", "DocumentSnapshot data: " +
+                                            documentSnapshot.get("strip_ad_banner").toString())
+                                    Log.d("exist", "DocumentSnapshot data: " +
+                                            documentSnapshot.get("background").toString())
+
+                                    (homePageModelList as ArrayList<HomePageModel>).add(
+                                        HomePageModel(1,
+                                            documentSnapshot.get("strip_ad_banner").toString(),
+                                            documentSnapshot.get("background").toString()
+                                        )
+                                    )
+                                   // homePageRecyclerView.adapter = HomePageAdapter(homePageModelList as ArrayList<HomePageModel>)   ///////////////////
+                                }
+                                2L -> {
+                                    val horizontalProductScrollModeList: ArrayList<HorizontalProductScrollModel> = ArrayList()
+                                    //val numberOfProducts = documentSnapshot.get("no_of_product") as Long
+                                    //for (x in 1 until numberOfProducts+1 step 1) {
+                                    

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GitHub User API</string>
+
+    <string name="_101k">101K</string>
+    <string name="following">Following</string>
+    <string name="_60k">60K</string>
+    <string name="detail_location">detail location</string>
+    <string name="company">Company :</string>
+    <string name="detail_company">detail company</string>
+    <string name="loading">Loading …</string>
+    <string name="logo">Logo</string>
+    <string name="github_user">GitHub User</string>
+    <string name="name">Name</string>
+    <string name="username">Username</string>
+    <string name="search_hint">Input</string>
+    <string name="tab_followers">Followers</string>
+    <string name="tab_following">Following</string>
+    <string name="followers">Followers</string>
+    <string name="_100">100</string>
+    <string name="repository">Repository</string>
+    <string name="location">Location</string>
+    <string name="settings">Change Language Settings</string>
+    <string name="search">Search</string>
+
+
+</resources>
